@@ -13,60 +13,71 @@ jobs:
       contents: read
       
     steps:
-      - name: Check for admin keywords in PR
+      # ⚡ КРИТИЧЕСКИ ВАЖНО: клонируем репозиторий
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Полная история, чтобы gh pr view работал корректно
+      
+      # 🔍 Проверяем заголовок и тело PR через GitHub CLI
+      - name: Check for admin keywords
         id: check
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          REPO: ${{ github.repository }}
         run: |
-          # Получаем данные PR через GitHub CLI
-          PR_DATA=$(gh pr view $PR_NUMBER --json title,body)
+          echo "📋 Проверяем PR #$PR_NUMBER"
           
-          # Извлекаем заголовок и тело
-          TITLE=$(echo "$PR_DATA" | jq -r '.title')
-          BODY=$(echo "$PR_DATA" | jq -r '.body // ""')
+          # Получаем заголовок и тело через gh
+          PR_TITLE=$(gh pr view $PR_NUMBER --json title -q .title)
+          PR_BODY=$(gh pr view $PR_NUMBER --json body -q .body)
           
           # Приводим к нижнему регистру
-          TITLE_LOWER=$(echo "$TITLE" | tr '[:upper:]' '[:lower:]')
-          BODY_LOWER=$(echo "$BODY" | tr '[:upper:]' '[:lower:]')
+          TITLE_LOWER=$(echo "$PR_TITLE" | tr '[:upper:]' '[:lower:]')
+          BODY_LOWER=$(echo "$PR_BODY" | tr '[:upper:]' '[:lower:]')
           
-          # Проверяем наличие ключевых слов
+          echo "📌 Заголовок: $PR_TITLE"
+          echo "📝 Тело: ${PR_BODY:-<пусто>}"
+          
+          # Ищем подозрительные слова
           if echo "$TITLE_LOWER" | grep -q "админ\|admin\|owner\|права\|доступ" || \
              echo "$BODY_LOWER" | grep -q "админ\|admin\|owner\|права\|доступ"; then
+            echo "🔴 Найдены подозрительные слова"
             echo "found=true" >> $GITHUB_OUTPUT
-            echo "🔴 Обнаружено подозрительное слово" >> $GITHUB_STEP_SUMMARY
           else
+            echo "✅ Подозрительных слов нет"
             echo "found=false" >> $GITHUB_OUTPUT
-            echo "✅ Подозрительных слов не найдено" >> $GITHUB_STEP_SUMMARY
           fi
       
-      - name: Reject PR (add label, comment, close)
+      # 🚫 Отклоняем PR, если найдены подозрительные слова
+      - name: Reject PR
         if: steps.check.outputs.found == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          REPO: ${{ github.repository }}
         run: |
           echo "🚫 Отклоняем PR #$PR_NUMBER"
           
-          # Добавляем метку "отказ" (создаём, если её нет)
-          gh label create "отказ" --repo $REPO --description "Автоматический отказ" 2>/dev/null || true
+          # Создаём метку "отказ", если её нет
+          gh label create "отказ" --description "Автоматический отказ" --color "B60205" 2>/dev/null || true
+          
+          # Добавляем метку
           gh pr edit $PR_NUMBER --add-label "отказ"
           
-          # Добавляем комментарий с объяснением
+          # Комментируем
           gh pr comment $PR_NUMBER --body "❌ **Автоматический отказ**  
           
           Ваш Pull Request содержит подозрительные слова (админ/admin/owner/права/доступ).  
           Изменение прав доступа через PR невозможно.  
           
-          Пожалуйста, создайте новый PR без этих слов, если у вас есть реальное изменение кода."
+          Пожалуйста, создайте новый PR без этих слов."
           
           # Закрываем PR
-          gh pr close $PR_NUMBER --comment "PR закрыт автоматически из-за подозрительного содержимого"
+          gh pr close $PR_NUMBER --comment "PR закрыт автоматически"
           
           echo "✅ PR #$PR_NUMBER отклонён"
       
+      # ✅ PR безопасен
       - name: PR is safe
         if: steps.check.outputs.found == 'false'
         run: |
