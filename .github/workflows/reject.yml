@@ -4,14 +4,16 @@ on:
   pull_request:
     types: [opened, edited]
 
+permissions:
+  pull-requests: write
+  issues: write
+
 jobs:
   reject:
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-      issues: write
     steps:
-      - uses: actions/github-script@v7
+      - name: Check and reject PR
+        uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -19,26 +21,58 @@ jobs:
             const title = (pr.title || '').toLowerCase();
             const body = (pr.body || '').toLowerCase();
             
-            const badWords = ['админ', 'admin', 'owner'];
+            const badWords = ['админ', 'admin', 'owner', 'права', 'доступ'];
             const hasBadWord = badWords.some(w => title.includes(w) || body.includes(w));
             
-            if (hasBadWord) {
+            if (!hasBadWord) {
+              console.log('✅ Подозрительных слов не найдено');
+              return;
+            }
+            
+            console.log('🔴 Найдены подозрительные слова');
+            
+            // Добавляем метку
+            try {
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: pr.number,
                 labels: ['отказ']
               });
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: pr.number,
-                body: '❌ Отказ: PR содержит подозрительные слова (админ/admin)'
-              });
-              await github.rest.pulls.update({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: pr.number,
-                state: 'closed'
-              });
+            } catch (e) {
+              // Если метки нет — создаём
+              if (e.status === 404) {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: 'отказ',
+                  color: 'B60205'
+                });
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  labels: ['отказ']
+                });
+              } else {
+                console.error('Ошибка при добавлении метки:', e.message);
+              }
             }
+            
+            // Комментарий
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: '❌ **Автоматический отказ**\n\nВаш PR содержит подозрительные слова (админ/admin/owner/права/доступ).\nИзменение прав доступа через PR невозможно.'
+            });
+            
+            // Закрываем PR
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              state: 'closed'
+            });
+            
+            console.log(`✅ PR #${pr.number} отклонён`);
