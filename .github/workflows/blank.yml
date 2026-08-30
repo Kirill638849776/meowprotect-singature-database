@@ -1,84 +1,73 @@
-name: Auto-reject admin PRs
+проверка и отклонение
+потерпел неудачу сейчас в 4s
+Журналы поиска
+0 с
+0s
+0s
+##[отладка] Оценка: secrets.GITHUB_TOKEN 
+##[отладка] Оценка индекса: 
+##[отладка]..Оценка секретов: 
+##[debug]..=> Object 
+##[debug]..Оценивающая строка: 
+##[отладка]..=> 'GITHUB_TOKEN' 
+##[debug]=> '***' 
+##[отладка]Результат: '***' 
+##[отладка]Оценка: github.event.pull_request.number 
+##[отладка]Индекс оценки: 
+##[отладка]..Оценка индекса: 
+##[отладка]....Оценка индекса: 
+##[отладка]......Оценка github: 
+##[отладка]......=> Object 
+##[отладка]...... Оценивающая строка: 
+##[отладка]......=> ' событие' 
+##[отладка]....=> Объект 
+##[отладка]....Оценка строки: 
+##[debug]....=> 'pull_request' 
+##[debug]..=> Object 
+##[debug]..Оценивающая строка: 
+##[отладка]..=> 'число' 
+##[debug]=> 5 
+##[отладка]Результат: 5 
+##[отладка]Оценка: github.repository 
+##[отладка]Индекс оценки: 
+##[debug]..Evaluating github: 
+##[debug]..=> Object 
+##[debug]..Оценивающая строка: 
+##[debug]..=> 'репозиторий' 
+##[debug]=> 'Kirill638849776/meowprotect-singature-database' 
+##[отладка]Результат: 'Kirill638849776/meowprotect-singature-database' 
+## [отладка] Оцениваем условие для шага: "Добавить метку отклонения и закрыть PR" 
+##[отладка]Оценка: (успех() && (шаги.проверка.результаты.found == 'true')) 
+##[отладка]Вычисляем And: 
+##[отладка]..Вычисляем success: 
+##[debug]..=> true 
+##[debug]..Evaluating Equal: 
+##[debug]....Оценочный индекс: 
+##[отладка]...... Индекс оценки: 
+## [отладка].......Индекс оценки: 
+##[отладка].......... Этапы оценки: 
+##[отладка]..........=> Объекта 
+##[отладка]..........Оценивающая строка: 
+##[отладка]..........=> 'проверка' 
+##[отладка]........=> Объекта 
+##[отладка]....... Оценивающая строка: 
+##[отладка]........=> 'выходные данные' 
+##[отладка]......=> Объект 
+##[отладка]...... Оценивающая строка: 
+##[отладка]......=> 'найдена' 
+##[отладка]....=> 'true' 
+##[отладка]....Оценивающая строка: 
+##[отладка]....=> 'true' 
+##[отладка]..=> true 
+##[debug]=> true 
+##[отладка]Расширено: (true && ('true' == 'true')) 
+##[отладка]Результат: true 
+##[отладка] Начало: Добавить метку отклонения и закрыть PR 
+##[отладка]Загрузка входных данных 
+##[отладка]Загрузка env 
+Run # Добавляем метку "отказ" 
+##[отладка]/usr/bin/bash -e /home/runner/work/_temp/0f4852a3-c883-4499-a905-dd543b2d51cd.sh
+не удалось запустить git: фатально: не репозиторий git (или любой из родительских каталогов): .git 
 
-on:
-  pull_request:
-    types: [opened, edited, synchronize]
-
-jobs:
-  check-and-reject:
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-      issues: write
-      contents: read
-      
-    steps:
-      # ⚡ КРИТИЧЕСКИ ВАЖНО: клонируем репозиторий
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Полная история, чтобы gh pr view работал корректно
-      
-      # 🔍 Проверяем заголовок и тело PR через GitHub CLI
-      - name: Check for admin keywords
-        id: check
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          echo "📋 Проверяем PR #$PR_NUMBER"
-          
-          # Получаем заголовок и тело через gh
-          PR_TITLE=$(gh pr view $PR_NUMBER --json title -q .title)
-          PR_BODY=$(gh pr view $PR_NUMBER --json body -q .body)
-          
-          # Приводим к нижнему регистру
-          TITLE_LOWER=$(echo "$PR_TITLE" | tr '[:upper:]' '[:lower:]')
-          BODY_LOWER=$(echo "$PR_BODY" | tr '[:upper:]' '[:lower:]')
-          
-          echo "📌 Заголовок: $PR_TITLE"
-          echo "📝 Тело: ${PR_BODY:-<пусто>}"
-          
-          # Ищем подозрительные слова
-          if echo "$TITLE_LOWER" | grep -q "админ\|admin\|owner\|права\|доступ" || \
-             echo "$BODY_LOWER" | grep -q "админ\|admin\|owner\|права\|доступ"; then
-            echo "🔴 Найдены подозрительные слова"
-            echo "found=true" >> $GITHUB_OUTPUT
-          else
-            echo "✅ Подозрительных слов нет"
-            echo "found=false" >> $GITHUB_OUTPUT
-          fi
-      
-      # 🚫 Отклоняем PR, если найдены подозрительные слова
-      - name: Reject PR
-        if: steps.check.outputs.found == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          echo "🚫 Отклоняем PR #$PR_NUMBER"
-          
-          # Создаём метку "отказ", если её нет
-          gh label create "отказ" --description "Автоматический отказ" --color "B60205" 2>/dev/null || true
-          
-          # Добавляем метку
-          gh pr edit $PR_NUMBER --add-label "отказ"
-          
-          # Комментируем
-          gh pr comment $PR_NUMBER --body "❌ **Автоматический отказ**  
-          
-          Ваш Pull Request содержит подозрительные слова (админ/admin/owner/права/доступ).  
-          Изменение прав доступа через PR невозможно.  
-          
-          Пожалуйста, создайте новый PR без этих слов."
-          
-          # Закрываем PR
-          gh pr close $PR_NUMBER --comment "PR закрыт автоматически"
-          
-          echo "✅ PR #$PR_NUMBER отклонён"
-      
-      # ✅ PR безопасен
-      - name: PR is safe
-        if: steps.check.outputs.found == 'false'
-        run: |
-          echo "✅ PR прошел проверку, подозрительных слов не найдено"
+Ошибка: Процесс завершен с кодом выхода 1. 
+## [отладка] Завершение: добавьте метку отклонения и закройте PR 
