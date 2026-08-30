@@ -76,4 +76,4 @@
 
 ---
 
-**MeowProtect Singapore** — защита, созданная сообществом.
+**MeowProtect Singature** — защита, созданная сообществом.
