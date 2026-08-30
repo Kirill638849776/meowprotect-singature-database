@@ -4,6 +4,7 @@ on:
   pull_request:
     types: [opened, edited]
 
+# Ключевое исправление: явно даем права на запись в PR и Issues
 permissions:
   pull-requests: write
   issues: write
@@ -20,18 +21,18 @@ jobs:
             const pr = context.payload.pull_request;
             const title = (pr.title || '').toLowerCase();
             const body = (pr.body || '').toLowerCase();
-            
+
             const badWords = ['админ', 'admin', 'owner', 'права', 'доступ'];
             const hasBadWord = badWords.some(w => title.includes(w) || body.includes(w));
-            
+
             if (!hasBadWord) {
               console.log('✅ Подозрительных слов не найдено');
               return;
             }
-            
-            console.log('🔴 Найдены подозрительные слова');
-            
-            // Добавляем метку
+
+            console.log('🔴 Найдены подозрительные слова, отклоняем PR');
+
+            // 1. Добавляем метку "отказ"
             try {
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
@@ -39,9 +40,10 @@ jobs:
                 issue_number: pr.number,
                 labels: ['отказ']
               });
-            } catch (e) {
-              // Если метки нет — создаём
-              if (e.status === 404) {
+            } catch (error) {
+              // Если метка "отказ" еще не создана, создаем её
+              if (error.status === 404) {
+                console.log('📝 Метка "отказ" не найдена, создаем...');
                 await github.rest.issues.createLabel({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
@@ -55,24 +57,25 @@ jobs:
                   labels: ['отказ']
                 });
               } else {
-                console.error('Ошибка при добавлении метки:', e.message);
+                // Если другая ошибка - логируем, но продолжаем
+                console.warn('⚠️ Не удалось добавить метку:', error.message);
               }
             }
-            
-            // Комментарий
+
+            // 2. Добавляем комментарий
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: pr.number,
-              body: '❌ **Автоматический отказ**\n\nВаш PR содержит подозрительные слова (админ/admin/owner/права/доступ).\nИзменение прав доступа через PR невозможно.'
+              body: '❌ **Автоматический отказ**\n\nВаш Pull Request содержит подозрительные слова (админ/admin/owner/права/доступ).\nИзменение прав доступа через PR невозможно.\n\nПожалуйста, создайте новый PR без этих слов.'
             });
-            
-            // Закрываем PR
+
+            // 3. Закрываем PR
             await github.rest.pulls.update({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: pr.number,
               state: 'closed'
             });
-            
-            console.log(`✅ PR #${pr.number} отклонён`);
+
+            console.log(`✅ PR #${pr.number} успешно отклонен`);
