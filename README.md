@@ -1,4 +1,4 @@
-# 🐱 MeowProtect Singapore  
+# 🐱 MeowProtect Singature  
 ### Community-Driven Antivirus Signatures
 
 ---
