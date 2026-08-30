@@ -18,14 +18,12 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BODY: ${{ github.event.pull_request.body }}
         run: |
-          # Приводим к нижнему регистру
           TITLE_LOWER=$(echo "$PR_TITLE" | tr '[:upper:]' '[:lower:]')
           BODY_LOWER=$(echo "$PR_BODY" | tr '[:upper:]' '[:lower:]')
           
           echo "📌 Заголовок: $PR_TITLE"
           echo "📝 Тело: ${PR_BODY:-<пусто>}"
           
-          # Проверяем наличие подозрительных слов
           if echo "$TITLE_LOWER" | grep -q "админ\|admin\|owner\|права\|доступ" || \
              echo "$BODY_LOWER" | grep -q "админ\|admin\|owner\|права\|доступ"; then
             echo "found=true" >> $GITHUB_OUTPUT
@@ -47,7 +45,6 @@ jobs:
             
             console.log(`🚫 Отклоняем PR #${prNumber}`);
             
-            // Добавляем метку "отказ" (создаём, если её нет)
             try {
               await github.rest.issues.addLabels({
                 owner,
@@ -56,7 +53,6 @@ jobs:
                 labels: ['отказ']
               });
             } catch (error) {
-              // Если метки нет, создаём её
               if (error.status === 404) {
                 await github.rest.issues.createLabel({
                   owner,
@@ -76,20 +72,13 @@ jobs:
               }
             }
             
-            // Добавляем комментарий
             await github.rest.issues.createComment({
               owner,
               repo,
               issue_number: prNumber,
-              body: `❌ **Автоматический отказ**
-              
-Ваш Pull Request содержит подозрительные слова (админ/admin/owner/права/доступ).
-Изменение прав доступа через PR невозможно.
-
-Пожалуйста, создайте новый PR без этих слов, если у вас есть реальное изменение кода.`
+              body: "❌ **Автоматический отказ**\n\nВаш Pull Request содержит подозрительные слова (админ/admin/owner/права/доступ).\nИзменение прав доступа через PR невозможно.\n\nПожалуйста, создайте новый PR без этих слов, если у вас есть реальное изменение кода."
             });
             
-            // Закрываем PR
             await github.rest.pulls.update({
               owner,
               repo,
