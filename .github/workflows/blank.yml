@@ -12,63 +12,53 @@ jobs:
       issues: write
       
     steps:
-      - name: Check PR for admin keywords
-        id: check
-        env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          PR_BODY: ${{ github.event.pull_request.body }}
-        run: |
-          TITLE_LOWER=$(echo "$PR_TITLE" | tr '[:upper:]' '[:lower:]')
-          BODY_LOWER=$(echo "$PR_BODY" | tr '[:upper:]' '[:lower:]')
-          
-          if echo "$TITLE_LOWER" | grep -q "админ\|admin\|owner\|права\|доступ" || \
-             echo "$BODY_LOWER" | grep -q "админ\|admin\|owner\|права\|доступ"; then
-            echo "found=true" >> $GITHUB_OUTPUT
-            echo "🔴 Найдены подозрительные слова"
-          else
-            echo "found=false" >> $GITHUB_OUTPUT
-            echo "✅ Подозрительных слов нет"
-          fi
-      
-      - name: Reject PR
-        if: steps.check.outputs.found == 'true'
+      - name: Check and reject if contains admin keywords
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const pr = context.payload.pull_request;
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
+            const title = pr.title.toLowerCase();
+            const body = (pr.body || '').toLowerCase();
             
-            console.log(`🚫 Отклоняем PR #${pr.number}`);
+            console.log(`📌 Проверяем PR #${pr.number}`);
+            console.log(`📝 Заголовок: ${title}`);
+            console.log(`📄 Тело: ${body.substring(0, 100)}...`);
             
-            // Добавляем метку
-            await github.rest.issues.addLabels({
-              owner,
-              repo,
-              issue_number: pr.number,
-              labels: ['отказ']
-            });
+            // Проверяем наличие подозрительных слов
+            const keywords = ['админ', 'admin', 'owner', 'права', 'доступ'];
+            const found = keywords.some(word => 
+              title.includes(word) || body.includes(word)
+            );
             
-            // Добавляем комментарий
-            await github.rest.issues.createComment({
-              owner,
-              repo,
-              issue_number: pr.number,
-              body: '❌ **Автоматический отказ**\n\nВаш Pull Request содержит подозрительные слова (админ/admin).\nИзменение прав доступа через PR невозможно.\n\nПожалуйста, создайте новый PR без этих слов.'
-            });
-            
-            // Закрываем PR
-            await github.rest.pulls.update({
-              owner,
-              repo,
-              pull_number: pr.number,
-              state: 'closed'
-            });
-            
-            console.log(`✅ PR #${pr.number} отклонён`);
-      
-      - name: PR is safe
-        if: steps.check.outputs.found == 'false'
-        run: |
-          echo "✅ PR прошел проверку"
+            if (found) {
+              console.log('🔴 Найдены подозрительные слова');
+              
+              // Добавляем метку "отказ"
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                labels: ['отказ']
+              });
+              
+              // Добавляем комментарий
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body: '❌ **Автоматический отказ**\n\nВаш Pull Request содержит подозрительные слова (админ/admin/owner/права/доступ).\nИзменение прав доступа через PR невозможно.\n\nПожалуйста, создайте новый PR без этих слов.'
+              });
+              
+              // Закрываем PR
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                state: 'closed'
+              });
+              
+              console.log(`✅ PR #${pr.number} отклонён`);
+            } else {
+              console.log('✅ Подозрительных слов не найдено');
+            }
