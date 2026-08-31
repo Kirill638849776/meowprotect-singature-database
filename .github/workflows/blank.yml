@@ -16,6 +16,7 @@ jobs:
 
   check2:
     runs-on: ubuntu-latest
+    needs: check1
     steps:
       - name: Проверка зависимостей
         run: |
@@ -25,6 +26,7 @@ jobs:
 
   check3:
     runs-on: ubuntu-latest
+    needs: check2
     steps:
       - name: Проверка стиля кода
         run: |
@@ -34,6 +36,7 @@ jobs:
 
   check4:
     runs-on: ubuntu-latest
+    needs: check3
     steps:
       - name: Проверка безопасности
         run: |
@@ -43,6 +46,7 @@ jobs:
 
   check5:
     runs-on: ubuntu-latest
+    needs: check4
     steps:
       - name: Проверка тестов
         run: |
@@ -52,6 +56,7 @@ jobs:
 
   check6:
     runs-on: ubuntu-latest
+    needs: check5
     steps:
       - name: Проверка покрытия кода
         run: |
@@ -61,6 +66,7 @@ jobs:
 
   check7:
     runs-on: ubuntu-latest
+    needs: check6
     steps:
       - name: Проверка производительности
         run: |
@@ -70,6 +76,7 @@ jobs:
 
   check8:
     runs-on: ubuntu-latest
+    needs: check7
     steps:
       - name: Проверка совместимости
         run: |
@@ -79,6 +86,7 @@ jobs:
 
   check9:
     runs-on: ubuntu-latest
+    needs: check8
     steps:
       - name: Проверка документации
         run: |
@@ -88,6 +96,7 @@ jobs:
 
   check10:
     runs-on: ubuntu-latest
+    needs: check9
     steps:
       - name: Автоматическая проверка
         run: |
