@@ -5,66 +5,93 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
-  checks:
+  check1:
     runs-on: ubuntu-latest
     steps:
-      - name: 1. Проверка синтаксиса
+      - name: Проверка синтаксиса
         run: |
           echo "🔍 Проверка синтаксиса..."
-          sleep 1m
+          sleep 10s
           echo "✅ Синтаксис корректен"
 
-      - name: 2. Проверка зависимостей
+  check2:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Проверка зависимостей
         run: |
           echo "📦 Проверка зависимостей..."
-          sleep 1m
+          sleep 10s
           echo "✅ Зависимости в порядке"
 
-      - name: 3. Проверка стиля кода
+  check3:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Проверка стиля кода
         run: |
           echo "🎨 Проверка стиля кода..."
-          sleep 1m
+          sleep 10s
           echo "✅ Стиль кода OK"
 
-      - name: 4. Проверка безопасности
+  check4:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Проверка безопасности
         run: |
           echo "🔒 Проверка безопасности..."
-          sleep 1m
+          sleep 10s
           echo "✅ Уязвимостей не найдено"
 
-      - name: 5. Проверка тестов
+  check5:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Проверка тестов
         run: |
           echo "🧪 Запуск тестов..."
-          sleep 1m
+          sleep 10s
           echo "✅ Все тесты пройдены"
 
-      - name: 6. Проверка покрытия кода
+  check6:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Проверка покрытия кода
         run: |
           echo "📊 Проверка покрытия кода..."
-          sleep 1m
+          sleep 10s
           echo "✅ Покрытие 100%"
 
-      - name: 7. Проверка производительности
+  check7:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Проверка производительности
         run: |
           echo "⚡ Проверка производительности..."
-          sleep 1m
+          sleep 10s
           echo "✅ Производительность в норме"
 
-      - name: 8. Проверка совместимости
+  check8:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Проверка совместимости
         run: |
           echo "🔄 Проверка совместимости..."
-          sleep 1m
+          sleep 10s
           echo "✅ Совместимость подтверждена"
 
-      - name: 9. Проверка документации
+  check9:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Проверка документации
         run: |
           echo "📄 Проверка документации..."
-          sleep 1m
+          sleep 10s
           echo "✅ Документация обновлена"
 
-      - name: 10. Автоматическая проверка
+  check10:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Автоматическая проверка
         run: |
           echo "🤖 Автоматическая проверка..."
-          sleep 5m
-          echo "❌ Автоматическая проверка не прошла! Нужна ручная проверка!"
-          exit 1  # ❌ Крестик в конце
+          sleep 10s
+          echo "❌ Автоматическая проверка не прошла!"
+          exit 1
