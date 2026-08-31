@@ -80,9 +80,5 @@
 
 **MeowProtect Singature** — защита, созданная сообществом.
 
---- 
 
-Дата база работает только на 
-
-<img width="1248" height="285" alt="GitHub_Lockup_White" src="https://github.com/user-attachments/assets/d9d4db2c-7e63-4c75-8e6b-b85e2fe85f5c" />
 
