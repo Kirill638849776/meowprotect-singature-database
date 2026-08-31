@@ -1,4 +1,4 @@
-# Лицензия MeowProtect Singature — Запрет на распространение
+# Лицензия MeowProtect Signature — Запрет на распространение
 
 **Версия 1.0**  
 **Дата вступления в силу:** 30 августа 2026 г.
@@ -6,7 +6,7 @@
 ---
 
 ## Авторские права
-Copyright (c) 2026 MeowProtect Singature. Все права защищены.
+Copyright (c) 2026 MeowProtect Signature. Все права защищены.
 
 ---
 
@@ -66,4 +66,4 @@ Copyright (c) 2026 MeowProtect Singature. Все права защищены.
 
 ---
 
-**© 2026 MeowProtect Singature. Все права защищены.**
+**© 2026 MeowProtect Signature. Все права защищены.**
