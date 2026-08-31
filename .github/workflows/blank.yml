@@ -1,4 +1,4 @@
-name: Check and require manual review
+name: Проверить и потребовать проверки вручную
 
 on:
   pull_request:
@@ -11,14 +11,13 @@ jobs:
       pull-requests: write
       
     steps:
-      - name: Check PR and add comment
+      - name: Проверить PR и добавить комментарий
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const pr = context.payload.pull_request;
             
-            // Проверяем, есть ли уже комментарий от бота
             const comments = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -30,24 +29,16 @@ jobs:
               c.body.includes('✅ Автоматическая проверка пройдена')
             );
             
-            // Если комментарий уже есть — не дублируем
             if (botComment) {
               console.log('ℹ️ Комментарий уже добавлен');
               return;
             }
             
-            // Добавляем комментарий
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: pr.number,
-              body: `✅ **Автоматическая проверка пройдена**
-            
-🔍 **Результат:** PR прошёл базовую проверку.
-
-👀 **Теперь требуется ручная проверка** от мейнтейнера.
-
-@Kirill638849776, пожалуйста, проверьте этот PR и примите решение.`
+              body: '✅ **Автоматическая проверка пройдена**\n\n🔍 **Результат:** PR прошел базовую проверку.\n\n👀 **Теперь требуется ручная проверка** от мейнтейнера.\n\n@Kirill638849776, пожалуйста, проверьте этот PR и примите решение.'
             });
             
             console.log(`✅ Комментарий добавлен в PR #${pr.number}`);
